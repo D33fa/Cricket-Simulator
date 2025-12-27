@@ -1,15 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Cricket Simulator</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Test Match Simulator</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; }
+#controls { margin-bottom: 20px; }
+#live { margin-bottom: 20px; }
+#innings { display: flex; flex-direction: column; align-items: flex-start; }
+table { border-collapse: collapse; margin-bottom: 20px; width: 400px; }
+th, td { border: 1px solid #333; padding: 5px; text-align: center; }
+#log { max-height: 250px; overflow-y: auto; border: 1px solid #333; padding: 5px; width: 400px; }
+</style>
 </head>
 <body>
-  <h1>Cricket Simulator 🏏</h1>
-  <p id="status">Ready to bowl.</p>
-  <button id="bowl">Bowl next ball</button>
 
-  <script src="sim.js"></script>
+<div id="controls">
+    <button id="nextSession">Simulate</button>
+    <div>   </div>
+    <div id="timeInfo">
+      <span id="clock">10:30</span>
+      <span id="day">Day 1</span>
+    </div>  
+</div>
+
+<div id="completed">
+  <h2>Completed Innings</h2>
+  <ul id="completed-scores"></ul>
+</div>
+
+<div id="live">
+  <h2>Live Score</h2>
+  <div id="score">Innings 1: 0/0 (0.0 overs)</div>
+</div>
+
+<div id="innings">
+  <h2>Innings 1 - Batting</h2>
+  <table id="scorecard1"><thead><tr><th>Batsman</th><th>Runs</th><th>Balls</th><th>On Strike</th></tr></thead><tbody></tbody></table>
+  <h3>Bowling</h3>
+  <table id="bowlers1"><thead><tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr></thead><tbody></tbody></table>
+
+  <h2>Innings 2 - Batting</h2>
+  <table id="scorecard2"><thead><tr><th>Batsman</th><th>Runs</th><th>Balls</th><th>On Strike</th></tr></thead><tbody></tbody></table>
+  <h3>Bowling</h3>
+  <table id="bowlers2"><thead><tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr></thead><tbody></tbody></table>
+
+  <h2>Innings 3 - Batting</h2>
+  <table id="scorecard3"><thead><tr><th>Batsman</th><th>Runs</th><th>Balls</th><th>On Strike</th></tr></thead><tbody></tbody></table>
+  <h3>Bowling</h3>
+  <table id="bowlers3"><thead><tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr></thead><tbody></tbody></table>
+
+  <h2>Innings 4 - Batting</h2>
+  <table id="scorecard4"><thead><tr><th>Batsman</th><th>Runs</th><th>Balls</th><th>On Strike</th></tr></thead><tbody></tbody></table>
+  <h3>Bowling</h3>
+  <table id="bowlers4"><thead><tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div id="log">
+  <h2>Ball-by-Ball Log</h2>
+  <div id="log-messages"></div>
+</div>
+
+<script src="sim.js"></script>
 </body>
 </html>

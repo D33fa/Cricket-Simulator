@@ -1,0 +1,24 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+button {
+  margin: 10px 0;
+  padding: 10px 20px;
+}
+
+#log {
+  list-style: none;
+  padding-left: 0;
+}
+
+table {
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th, td {
+  padding: 5px 10px;
+  text-align: center;
+}

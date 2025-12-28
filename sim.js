@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentBowlerIndex=(currentBowlerIndex+1)%inningsBowlers[currentInnings].length;
       }
 
-      simulatedTime++;
+      simulatedTime += 2/3; // 40 seconds per ball 
       updateClock();
       updateScorecard();
       updateBowlersTable();

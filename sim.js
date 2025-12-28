@@ -49,7 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Batsmen
   let teamBatsmen = Array.from({length:4},(_,i)=>Array.from({length:11},(__,j)=>({
-    name:`${battingTeams[i]}_Player${j+1}`, runs:0, balls:0
+    name:`${battingTeams[i]}_Player${j+1}`, 
+     runs:0, 
+     balls:0,
+     out: false,
+     dismissal: null
   })));
 
   // Bowlers
@@ -57,23 +61,54 @@ document.addEventListener("DOMContentLoaded", () => {
     name:`${i%2===0?"B":"A"}_Bowler${j+1}`, ballsBowled:0, runsConceded:0, wicketsTaken:0
   })));
 
+  const dismissalTypes = [
+  { type: "Bowled", bowlerCredit: true },
+  { type: "Caught", bowlerCredit: true },
+  { type: "LBW", bowlerCredit: true },
+  { type: "Run Out", bowlerCredit: false },
+  { type: "Stumped", bowlerCredit: true },
+  { type: "Hit Wicket", bowlerCredit: true },
+  { type: "Handled Ball", bowlerCredit: false },
+  { type: "Obstructing the Field", bowlerCredit: false }
+  ];
+
+  dismissal = {
+  type: "Caught",
+  bowler: "Player 5",
+  fielder: "Player 3" // only where applicable
+  };
+
   // Helpers
   const pad = n=>n<10?"0"+n:n;
   const formatOvers = balls=>`${Math.floor(balls/6)}.${balls%6}`;
 
-function checkBreaks() {
-  for (let b of breakTimes) {
-    if (simulatedTime >= b.start && simulatedTime < b.end) {
-      simulatedTime = b.end; // skip the break
-      updateClock();
-      alert(b.name); // "Lunch" / "Tea"
-      return true;   // <-- SIGNAL STOP
-    }
+  function getRandomDismissal() {
+    const d = dismissalTypes[Math.floor(Math.random() * dismissalTypes.length)];
+    return {
+      type: d.type,
+      bowlerCredit: d.bowlerCredit
+    };
   }
-  return false;
-}
 
-function updateClock() {
+  function getRandomFielder() {
+    return inningsBowlers[currentInnings][
+      Math.floor(Math.random() * inningsBowlers[currentInnings].length)
+    ];
+  }
+
+  function checkBreaks() {
+    for (let b of breakTimes) {
+      if (simulatedTime >= b.start && simulatedTime < b.end) {
+        simulatedTime = b.end; // skip the break
+        updateClock();
+        alert(b.name); // "Lunch" / "Tea"
+        return true;   // <-- SIGNAL STOP
+      }
+    }
+    return false;
+  }
+
+  function updateClock() {
     const baseHour = 10;        // 10 AM
     const baseMinute = 30;      // 30 minutes past 10
     let totalMinutes = simulatedTime + baseMinute;
@@ -81,27 +116,62 @@ function updateClock() {
     let minutes = totalMinutes % 60;
     clockEl.innerText = `${pad(hours)}:${pad(minutes)}`;
     dayEl.innerText = `Day ${currentDay}`;
-}
+  }
 
   function bowlBall() {
     const r=Math.random();
-    if(r<0.05) return {type:"wicket"};
-    if(r<0.30) return {type:"runs", value:0};
-    if(r<0.55) return {type:"runs", value:1};
-    if(r<0.75) return {type:"runs", value:2};
-    if(r<0.90) return {type:"runs", value:4};
-    return {type:"runs", value:6};
+    if(r<0.05) { 
+      const dismissal = getRandomDismissal();
+      return {
+          type:"wicket",
+          dismissal
+        };
+      }
+      if(r<0.30) return {type:"runs", value:0};
+      if(r<0.55) return {type:"runs", value:1};
+      if(r<0.75) return {type:"runs", value:2};
+      if(r<0.90) return {type:"runs", value:4};
+      return {type:"runs", value:6
+    };
   }
 
   function rotateStrike(runs){ if(runs%2===1)[strikerIndex,nonStrikerIndex]=[nonStrikerIndex,strikerIndex]; }
   function endOfOver(){ [strikerIndex,nonStrikerIndex]=[nonStrikerIndex,strikerIndex]; }
 
+  function dismissalText(b) {
+    if (!b.out) return "not out";
+
+    const d = b.dismissal;
+
+    switch (d.type) {
+      case "Bowled":
+        return `b ${d.bowler}`;
+      case "Caught":
+        return `c ${d.fielder} b ${d.bowler}`;
+      case "LBW":
+        return `lbw b ${d.bowler}`;
+      case "Run Out":
+        return `run out (${d.fielder})`;
+      case "Stumped":
+        return `st ${d.fielder} b ${d.bowler}`;
+      default:
+        return d.type;
+    }
+  }
+
   function updateScorecard(){
     const batsmen = teamBatsmen[currentInnings];
-    scorecardEls[currentInnings].innerHTML="";
-    batsmen.forEach((b,i)=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML=`<td>${b.name}</td><td>${b.runs}</td><td>${b.balls}</td><td>${i===strikerIndex?"*":""}</td>`;
+    scorecardEls[currentInnings].innerHTML = "";
+
+    batsmen.forEach((b, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${b.name}</td>
+        <td>${dismissalText(b)}</td>
+        <td>${b.runs}</td>
+        <td>${b.balls}</td>
+        <td>${i === strikerIndex && !b.out ? "*" : ""}</td>
+      `;
       scorecardEls[currentInnings].appendChild(tr);
     });
   }
@@ -117,37 +187,30 @@ function updateClock() {
     });
   }
 
-function updateLiveScore(){
-  let leadText = "";
-  const battingTeam = battingTeams[currentInnings];
-
-  if (currentInnings === 1) {
-    // 2nd innings
-    const diff = runs - inningsTotals[0];
-    leadText = ` – ${battingTeam} ${diff>=0?"ahead":"behind"} by ${Math.abs(diff)} runs`;
-
-  } else if (currentInnings === 2) {
-    // 3rd innings
-    const combined = inningsTotals[0] + runs;
-    const diff = combined - inningsTotals[1];
-    leadText = ` – ${battingTeam} ${diff>=0?"ahead":"behind"} by ${Math.abs(diff)} runs`;
-
-  } else if (currentInnings === 3) {
-    // 4th innings (optional: target logic later)
-    const target = inningsTotals[0] + inningsTotals[2] + 1;
-    const remaining = target - (inningsTotals[1] + runs);
-    if (remaining > 0) {
-      leadText = ` – ${battingTeam} needs ${remaining} runs`;
-    } else {
-      leadText = ` – ${battingTeam} has won`;
+  function updateLiveScore(){
+    let leadText = "";
+    const battingTeam = battingTeams[currentInnings];
+    if (currentInnings === 1) {
+      // 2nd innings
+      const diff = runs - inningsTotals[0];
+      leadText = ` – ${battingTeam} ${diff>=0?"ahead":"behind"} by ${Math.abs(diff)} runs`;
+    } else if (currentInnings === 2) {
+      // 3rd innings
+      const combined = inningsTotals[0] + runs;
+      const diff = combined - inningsTotals[1];
+      leadText = ` – ${battingTeam} ${diff>=0?"ahead":"behind"} by ${Math.abs(diff)} runs`;
+    } else if (currentInnings === 3) {
+      // 4th innings (optional: target logic later)
+      const target = inningsTotals[0] + inningsTotals[2] + 1;
+      const remaining = target - (inningsTotals[1] + runs);
+      if (remaining > 0) {
+        leadText = ` – ${battingTeam} needs ${remaining} runs`;
+        } else {
+        leadText = ` – ${battingTeam} has won`;
+      }
     }
+    scoreEl.innerText = `Innings ${currentInnings+1}: ${wickets}/${runs} (${formatOvers(balls)} overs)` + leadText;
   }
-
-  scoreEl.innerText =
-    `Innings ${currentInnings+1}: ${wickets}/${runs} (${formatOvers(balls)} overs)` +
-    leadText;
-}
-
 
   function logBall(striker,bowler,result){
     let text = `${striker} vs ${bowler} – `;
@@ -162,10 +225,8 @@ function updateLiveScore(){
   function endInnings(){
     inningsTotals[currentInnings] = runs;
     const li = document.createElement("li");
-    const diff = currentInnings===1?runs-inningsTotals[0]
-                 : currentInnings===3?runs+inningsTotals[1]-inningsTotals[0]-inningsTotals[2]:0;
-    li.innerText=`Innings ${currentInnings+1}: ${wickets}/${runs} (${formatOvers(balls)} overs)`+
-                 (diff!==0?` – ${battingTeams[currentInnings]} ${diff>=0?"ahead":"behind"} by ${Math.abs(diff)} runs`:"");
+    const diff = currentInnings===1?runs-inningsTotals[0] : currentInnings===3?runs+inningsTotals[1]-inningsTotals[0]-inningsTotals[2]:0;
+    li.innerText=`Innings ${currentInnings+1}: ${wickets}/${runs} (${formatOvers(balls)} overs)`+ (diff!==0?` – ${battingTeams[currentInnings]} ${diff>=0?"ahead":"behind"} by ${Math.abs(diff)} runs`:"");
     completedScoresEl.appendChild(li);
 
     // Follow-on logic
@@ -224,8 +285,20 @@ function updateLiveScore(){
 
       if(result.type==="wicket"){
         wickets++;
+
+        const dismissal = result.dismissal;
+        striker.out = true;
+
+        striker.dismissal = {
+          type: dismissal.type,
+          bowler: dismissal.bowlerCredit ? bowler.name : null,
+          fielder: dismissal.type === "Caught" || dismissal.type === "Run Out"
+          ? getRandomFielder().name
+          : null
+        };
+
         bowler.wicketsTaken++;
-        const nextBatsman = batsmen.findIndex((b,i)=>b.balls===0 && i!==strikerIndex && i!==nonStrikerIndex);
+        const nextBatsman = batsmen.findIndex((b,i)=>b.balls===0 && !b.out && i!==strikerIndex && i!==nonStrikerIndex);
         if(nextBatsman!==-1) strikerIndex=nextBatsman;
       } else {
         striker.runs += result.value;

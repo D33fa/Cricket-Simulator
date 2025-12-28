@@ -111,9 +111,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateClock() {
     const baseHour = 10;        // 10 AM
     const baseMinute = 30;      // 30 minutes past 10
-    let totalMinutes = simulatedTime + baseMinute;
-    let hours = baseHour + Math.floor(totalMinutes / 60);
-    let minutes = totalMinutes % 60;
+    const roundedMinutes = Math.round(simulatedTime);
+    const totalMinutes = roundedMinutes + baseMinute;
+
+    const hours = baseHour + Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
     clockEl.innerText = `${pad(hours)}:${pad(minutes)}`;
     dayEl.innerText = `Day ${currentDay}`;
   }
